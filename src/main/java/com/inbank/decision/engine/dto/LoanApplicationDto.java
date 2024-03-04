@@ -6,7 +6,7 @@ import lombok.Data;
 public class LoanApplicationDto {
 
     private String personalCode;
-    private int loanAmount;
-    private int loanPeriod;
+    private Integer loanAmount;
+    private Integer loanPeriod;
 
 }
