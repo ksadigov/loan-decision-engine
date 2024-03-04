@@ -12,5 +12,4 @@ public class LoanApplicationResultDto {
     private int approvedAmount;
     private int approvedPeriod;
     private String message;
-    private LoanApplicationDto application;
 }

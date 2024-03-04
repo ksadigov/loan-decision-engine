@@ -1,12 +1,12 @@
 package com.inbank.decision.engine.service.impl;
 
+import com.inbank.decision.engine.client.RegistryApiClient;
 import com.inbank.decision.engine.dto.LoanApplicationDto;
 import com.inbank.decision.engine.dto.LoanApplicationResultDto;
 import com.inbank.decision.engine.dto.LoanCalculationResultDto;
 import com.inbank.decision.engine.model.BorrowerProfile;
 import com.inbank.decision.engine.service.LoanCalculationService;
 import com.inbank.decision.engine.service.LoanDecisionService;
-import com.inbank.decision.engine.util.MockRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +15,11 @@ import org.springframework.stereotype.Service;
 public class LoanDecisionServiceImpl implements LoanDecisionService {
 
     private final LoanCalculationService loanCalculationService;
+    private final RegistryApiClient registryApiClient;
 
     @Override
     public LoanApplicationResultDto makeDecision(LoanApplicationDto application) {
-        BorrowerProfile borrower = MockRegistry.getProfile(application.getPersonalCode());
+        BorrowerProfile borrower = registryApiClient.getBorrowerProfile(application.getPersonalCode());
         if (borrower == null) {
             return LoanApplicationResultDto.builder()
                     .approved(false)
@@ -48,7 +49,6 @@ public class LoanDecisionServiceImpl implements LoanDecisionService {
                 .maxAmountForRequestedPeriod(loanCalculationService.calculatePotentialMaxLoanAmount(borrowerCreditModifier, requestedLoanPeriod))
                 .approvedAmount(finalMaxLoanAmount)
                 .approvedPeriod(calculationResult.getApprovedLoanPeriodMonths())
-                .message("Congratulations! Your loan application is approved. We've found a loan option that matches your needs.")
-                .application(application).build();
+                .message("Congratulations! Your loan application is approved. We've found a loan option that matches your needs.").build();
     }
 }
