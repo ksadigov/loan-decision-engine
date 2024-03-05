@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Loan Application Form</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}" />
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Loan Application Form</h2>
+    <form id="loanApplicationForm">
+        <div class="form-group">
+            <label for="loanAmount">Loan Amount:</label>
+            <input type="number" id="loanAmount" name="loanAmount" required>
+        </div>
+        <div class="form-group">
+            <label for="loanPeriod">Loan Period (months):</label>
+            <input type="number" id="loanPeriod" name="loanPeriod" required>
+        </div>
+        <div class="form-group">
+            <label for="personalCode">Personal Code:</label>
+            <input type="text" id="personalCode" name="personalCode" required>
+        </div>
+        <button type="button" id="applyNow">Apply Now</button>
+    </form>
+</div>
+
+<div id="applicationResult" class="hidden">
+    <h3>Application Result</h3>
+<!--    <p>Approved: <span id="resultApproved"></span></p>-->
+    <p>Message: <span id="resultMessage"></span></p>
+
+    <p>Max Amount For Requested Period: <span id="resultMaxAmount"></span></p>
+    <p>Approved Amount: <span id="resultApprovedAmount"></span></p>
+    <p>Approved Period: <span id="resultApprovedPeriod"></span></p>
+</div>
+
+
+<script th:src="@{/js/loanApplication.js}"></script>
+</body>
+</html>
