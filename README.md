@@ -1,4 +1,4 @@
-# Loan Decision Engine Project
+# Loan Decision Engine
 
 ## Overview
 This project implements a loan decision engine that evaluates loan applications based on the applicant's code, requested loan amount, and requested period, providing a decision and an approved amount.
