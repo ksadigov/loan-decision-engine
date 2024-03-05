@@ -12,11 +12,13 @@
     <form id="loanApplicationForm">
         <div class="form-group">
             <label for="loanAmount">Loan Amount:</label>
-            <input type="number" id="loanAmount" name="loanAmount" required>
+            <input type="number" id="loanAmount" name="loanAmount" required min="2000" max="10000">
+            <span id="loanAmountFeedback" class="form-feedback"></span>
         </div>
         <div class="form-group">
             <label for="loanPeriod">Loan Period (months):</label>
-            <input type="number" id="loanPeriod" name="loanPeriod" required>
+            <input type="number" id="loanPeriod" name="loanPeriod" required min="12" max="60">
+            <span id="loanPeriodFeedback" class="form-feedback"></span>
         </div>
         <div class="form-group">
             <label for="personalCode">Personal Code:</label>
@@ -28,9 +30,7 @@
 
 <div id="applicationResult" class="hidden">
     <h3>Application Result</h3>
-<!--    <p>Approved: <span id="resultApproved"></span></p>-->
     <p>Message: <span id="resultMessage"></span></p>
-
     <p>Max Amount For Requested Period: <span id="resultMaxAmount"></span></p>
     <p>Approved Amount: <span id="resultApprovedAmount"></span></p>
     <p>Approved Period: <span id="resultApprovedPeriod"></span></p>
