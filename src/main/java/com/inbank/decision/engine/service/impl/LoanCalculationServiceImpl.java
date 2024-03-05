@@ -26,7 +26,6 @@ public class LoanCalculationServiceImpl implements LoanCalculationService {
     @Override
     public int adjustLoanAmountToLimits(int maxLoanAmount) {
         return maxLoanAmount < MIN_LOAN_AMOUNT ? 0 : Math.min(MAX_LOAN_AMOUNT, maxLoanAmount);
-
     }
 
     @Override
