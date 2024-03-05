@@ -10,6 +10,8 @@ import com.inbank.decision.engine.service.LoanDecisionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import static com.inbank.decision.engine.constant.Constants.MAX_LOAN_AMOUNT;
+
 @Service
 @RequiredArgsConstructor
 public class LoanDecisionServiceImpl implements LoanDecisionService {
@@ -21,34 +23,49 @@ public class LoanDecisionServiceImpl implements LoanDecisionService {
     public LoanApplicationResultDto makeDecision(LoanApplicationDto application) {
         BorrowerProfile borrower = registryApiClient.getBorrowerProfile(application.getPersonalCode());
         if (borrower == null) {
-            return LoanApplicationResultDto.builder()
-                    .approved(false)
-                    .message("Application Denied: The personal code provided does not exist in external registries.").build();
+            return applicationDenied("Application Denied: The personal code provided does not exist in external registries.");
         }
+
         if (borrower.getCreditModifier() == 0) {
-            return LoanApplicationResultDto.builder()
-                    .approved(false)
-                    .message("Application Denied: Current outstanding debt detected.").build();
+            return applicationDenied("Application Denied: Current outstanding debt detected.");
         }
 
-        int requestedLoanPeriod = application.getLoanPeriod();
-        int borrowerCreditModifier = borrower.getCreditModifier();
-        int requestedLoanAmount = application.getLoanAmount();
-
-        LoanCalculationResultDto calculationResult =
-                loanCalculationService.calculateLoanOfferWithinLimits(borrowerCreditModifier, requestedLoanAmount, requestedLoanPeriod);
+        LoanCalculationResultDto calculationResult = calculateLoanOffer(application, borrower);
         if (!calculationResult.isLoanApproved()) {
-            return LoanApplicationResultDto.builder()
-                    .approved(false)
-                    .message("Currently, we are unable to offer a loan that meets your requirements and our lending criteria.").build();
+            return applicationDenied("Currently, we are unable to offer a loan that meets your requirements and our lending criteria.");
         }
 
+        return prepareApprovalResponse(calculationResult, borrower.getCreditModifier(), application.getLoanPeriod());
+    }
+
+    private LoanApplicationResultDto applicationDenied(String message) {
+        return LoanApplicationResultDto.builder()
+                .approved(false)
+                .message(message)
+                .build();
+    }
+
+    private LoanCalculationResultDto calculateLoanOffer(LoanApplicationDto application, BorrowerProfile borrower) {
+        return loanCalculationService.calculateLoanOfferWithinLimits(borrower.getCreditModifier(),
+                application.getLoanAmount(), application.getLoanPeriod());
+    }
+
+    private LoanApplicationResultDto prepareApprovalResponse(LoanCalculationResultDto calculationResult, int borrowerCreditModifier, int requestedLoanPeriod) {
         int finalMaxLoanAmount = loanCalculationService.adjustLoanAmountToLimits(calculationResult.getApprovedLoanAmount());
+        int potentialMaxLoanAmount = calculateAdjustedPotentialMaxLoanAmount(borrowerCreditModifier, requestedLoanPeriod);
+
         return LoanApplicationResultDto.builder()
                 .approved(true)
-                .maxAmountForRequestedPeriod(loanCalculationService.calculatePotentialMaxLoanAmount(borrowerCreditModifier, requestedLoanPeriod))
+                .maxAmountForRequestedPeriod(potentialMaxLoanAmount)
                 .approvedAmount(finalMaxLoanAmount)
                 .approvedPeriod(calculationResult.getApprovedLoanPeriodMonths())
-                .message("Congratulations! Your loan application is approved. We've found a loan option that matches your needs.").build();
+                .message("Congratulations! Your loan application is approved. We've found a loan option that matches your needs.")
+                .build();
     }
+
+    private int calculateAdjustedPotentialMaxLoanAmount(int borrowerCreditModifier, int requestedLoanPeriod) {
+        int potentialMaxLoanAmount = loanCalculationService.calculatePotentialMaxLoanAmount(borrowerCreditModifier, requestedLoanPeriod);
+        return Math.min(potentialMaxLoanAmount, MAX_LOAN_AMOUNT);
+    }
+
 }
