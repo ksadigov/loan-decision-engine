@@ -27,10 +27,9 @@ document.getElementById('applyNow').addEventListener('click', function() {
     .then(response => response.json())
     .then(data => {
         document.getElementById('applicationResult').classList.remove('hidden');
-        document.getElementById('resultMaxAmount').textContent = data.maxAmountForRequestedPeriod;
-        document.getElementById('resultApprovedAmount').textContent = data.approvedAmount;
-        document.getElementById('resultApprovedPeriod').textContent = data.approvedPeriod;
-        document.getElementById('resultMessage').textContent = data.message;
+        document.getElementById('resultAmount').textContent = data.amount;
+        document.getElementById('resultPeriod').textContent = data.period;
+        document.getElementById('resultStatus').textContent = data.status;
     })
     .catch((error) => {
         console.error('Error:', error);
