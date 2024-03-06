@@ -7,6 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class BorrowerProfile {
     private String personalCode;
-    private boolean hasDebt;
     private int creditModifier;
 }

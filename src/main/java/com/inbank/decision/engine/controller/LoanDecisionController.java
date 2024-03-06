@@ -3,6 +3,7 @@ package com.inbank.decision.engine.controller;
 import com.inbank.decision.engine.dto.LoanApplicationDto;
 import com.inbank.decision.engine.dto.LoanApplicationResultDto;
 import com.inbank.decision.engine.service.LoanDecisionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class LoanDecisionController {
     private final LoanDecisionService loanDecisionService;
 
     @PostMapping("/decision")
-    public ResponseEntity<LoanApplicationResultDto> makeLoanDecision(@RequestBody LoanApplicationDto application) {
+    public ResponseEntity<LoanApplicationResultDto> makeLoanDecision(@Valid @RequestBody LoanApplicationDto application) {
         return new ResponseEntity<>(loanDecisionService.makeDecision(application), HttpStatus.OK);
     }
 }

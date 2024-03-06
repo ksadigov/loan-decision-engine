@@ -3,8 +3,9 @@ package com.inbank.decision.engine.service;
 import com.inbank.decision.engine.client.RegistryApiClient;
 import com.inbank.decision.engine.dto.LoanApplicationDto;
 import com.inbank.decision.engine.dto.LoanApplicationResultDto;
-import com.inbank.decision.engine.dto.LoanCalculationResultDto;
+import com.inbank.decision.engine.exception.BorrowerNotFoundException;
 import com.inbank.decision.engine.model.BorrowerProfile;
+import com.inbank.decision.engine.model.LoanApplicationStatus;
 import com.inbank.decision.engine.service.impl.LoanDecisionServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,8 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -30,73 +31,51 @@ class LoanDecisionServiceImplTest {
     private LoanDecisionServiceImpl testObj;
 
     @Test
-    void makeDecision_shouldDenyLoanForNonexistentBorrowerProfile() {
+    void makeDecision_borrowerNotFound_throwsException() {
         LoanApplicationDto application = new LoanApplicationDto();
         application.setPersonalCode("nonexistent");
 
         when(registryApiClient.getBorrowerProfile("nonexistent")).thenReturn(null);
 
-        LoanApplicationResultDto result = testObj.makeDecision(application);
+        assertThrows(BorrowerNotFoundException.class, () -> testObj.makeDecision(application));
 
-        assertThat(result.isApproved()).isFalse();
-        assertThat(result.getMessage()).isEqualTo("Application Denied: The personal code provided does not exist in external registries.");
+        verify(registryApiClient).getBorrowerProfile("nonexistent");
+        verifyNoInteractions(loanCalculationService);
     }
 
     @Test
-    void makeDecision_whenBorrowerHasOutstandingDebt_thenLoanApplicationIsDenied() {
+    void makeDecision_borrowerCreditModifierIsZero_returnsNotApproved() {
         LoanApplicationDto application = new LoanApplicationDto();
-        application.setPersonalCode("withDebt");
+        application.setPersonalCode("123");
+        BorrowerProfile borrower = new BorrowerProfile("123", 0);
 
-        BorrowerProfile profileWithDebt = new BorrowerProfile("12345678900", false, 0);
-
-        when(registryApiClient.getBorrowerProfile("withDebt")).thenReturn(profileWithDebt);
+        when(registryApiClient.getBorrowerProfile("123")).thenReturn(borrower);
 
         LoanApplicationResultDto result = testObj.makeDecision(application);
 
-        assertThat(result.isApproved()).isFalse();
-        assertThat(result.getMessage()).isEqualTo("Application Denied: Current outstanding debt detected.");
+        assertThat(result.getStatus()).isEqualTo(LoanApplicationStatus.NOT_APPROVED);
+        verify(registryApiClient).getBorrowerProfile("123");
+        verifyNoInteractions(loanCalculationService);
     }
 
     @Test
-    void makeDecision_givenValidLoanApplication_thenLoanIsApproved() {
+    void makeDecision_validBorrower_callsLoanCalculationService() {
         LoanApplicationDto application = new LoanApplicationDto();
-        application.setPersonalCode("validUser");
+        application.setPersonalCode("123");
         application.setLoanAmount(5000);
-        application.setLoanPeriod(12);
+        application.setLoanPeriod(24);
+        BorrowerProfile borrower = new BorrowerProfile("123", 10);
 
-        BorrowerProfile validProfile = new BorrowerProfile("12345678999", false, 100);
-
-        when(registryApiClient.getBorrowerProfile("validUser")).thenReturn(validProfile);
-
-        LoanCalculationResultDto calculationResult = new LoanCalculationResultDto(true, 12, 5000);
-        when(loanCalculationService.calculateLoanOfferWithinLimits(anyInt(), anyInt(), anyInt())).thenReturn(calculationResult);
-        when(loanCalculationService.adjustLoanAmountToLimits(anyInt())).thenReturn(5000);
-        when(loanCalculationService.calculatePotentialMaxLoanAmount(anyInt(), anyInt())).thenReturn(5000);
+        when(registryApiClient.getBorrowerProfile("123")).thenReturn(borrower);
+        when(loanCalculationService.calculateLoanOfferWithinLimits(anyInt(), anyInt(), anyInt()))
+                .thenReturn(LoanApplicationResultDto.builder().status(LoanApplicationStatus.APPROVED).amount(5000).period(12).build());
 
         LoanApplicationResultDto result = testObj.makeDecision(application);
 
-        assertThat(result.isApproved()).isTrue();
-        assertThat(result.getMessage()).isEqualTo("Congratulations! Your loan application is approved. We've found a loan option that matches your needs.");
+        assertThat(result.getStatus()).isEqualTo(LoanApplicationStatus.APPROVED);
+        assertThat(result.getAmount()).isEqualTo(5000);
+        assertThat(result.getPeriod()).isEqualTo(12);
+        verify(registryApiClient).getBorrowerProfile("123");
+        verify(loanCalculationService).calculateLoanOfferWithinLimits(borrower.getCreditModifier(), application.getLoanAmount(), application.getLoanPeriod());
     }
-
-    @Test
-    void makeDecision_shouldDenyLoanWhenRequestedAmountExceedsApprovalCriteria() {
-        LoanApplicationDto application = new LoanApplicationDto();
-        application.setPersonalCode("validButUnqualifiable");
-        application.setLoanAmount(10000);
-        application.setLoanPeriod(6);
-
-        BorrowerProfile profileWithGoodCredit = new BorrowerProfile("98765432123", false, 100);
-
-        when(registryApiClient.getBorrowerProfile("validButUnqualifiable")).thenReturn(profileWithGoodCredit);
-
-        LoanCalculationResultDto calculationResult = new LoanCalculationResultDto(false, 6, 5000);
-        when(loanCalculationService.calculateLoanOfferWithinLimits(anyInt(), anyInt(), anyInt())).thenReturn(calculationResult);
-
-        LoanApplicationResultDto result = testObj.makeDecision(application);
-
-        assertThat(result.isApproved()).isFalse();
-        assertThat(result.getMessage()).isEqualTo("Currently, we are unable to offer a loan that meets your requirements and our lending criteria.");
-    }
-
 }
