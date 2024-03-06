@@ -12,18 +12,18 @@ class LoanCalculationServiceImplTest {
     private final LoanCalculationServiceImpl testObj = new LoanCalculationServiceImpl();
 
     @Test
-    void testCalculateLoanOfferWithinLimits_Approved() {
+    void calculateLoanOfferWithinLimits_Approved() {
         int creditModifier = 300;
         int requestedLoanAmount = 2000;
         int requestedLoanPeriod = 12;
         var result = testObj.calculateLoanOfferWithinLimits(creditModifier, requestedLoanAmount, requestedLoanPeriod);
 
         assertThat(result.getStatus()).isEqualTo(LoanApplicationStatus.APPROVED);
-        assertThat(result.getAmount()).isGreaterThanOrEqualTo(2000);
+        assertThat(result.getAmount()).isGreaterThanOrEqualTo(creditModifier * requestedLoanPeriod);
     }
 
     @Test
-    void testCalculateLoanOfferWithinLimits_NewOffer() {
+    void calculateLoanOfferWithinLimits_NewOffer() {
         int creditModifier = 100;
         int requestedLoanAmount = 10000;
         int requestedLoanPeriod = 12;
