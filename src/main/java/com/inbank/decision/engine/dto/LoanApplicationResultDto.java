@@ -1,15 +1,16 @@
 package com.inbank.decision.engine.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.inbank.decision.engine.model.LoanApplicationStatus;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoanApplicationResultDto {
 
-    private boolean approved;
-    private int maxAmountForRequestedPeriod;
-    private int approvedAmount;
-    private int approvedPeriod;
-    private String message;
+    private LoanApplicationStatus status;
+    private Integer amount;
+    private Integer period;
 }
